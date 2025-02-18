@@ -12,5 +12,8 @@ public class TransactionDTO {
     @DecimalMin(value = "0.01", message = "金额必须大于0")
     private BigDecimal amount;
 
+    @NotNull(message = "必须填写出行目的地")
+    private String destination;
+
     private String remark;
 }

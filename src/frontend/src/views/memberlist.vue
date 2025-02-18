@@ -21,6 +21,7 @@
     <el-table :data="members" border stripe>
       <el-table-column prop="cardNumber" label="会员卡号" width="120" />
       <el-table-column prop="name" label="姓名" width="100" />
+      <el-table-column prop="phoneNumber" label="手机号" width="120" />
       <el-table-column prop="age" label="年龄" width="80" />
       <el-table-column prop="joinDate" label="入会时间" width="160">
         <template #default="scope">
@@ -90,6 +91,9 @@
         <el-form-item label="身份证号" required>
           <el-input v-model="memberForm.idNumber" />
         </el-form-item>
+        <el-form-item label="手机号" required>
+          <el-input v-model="memberForm.phoneNumber" />
+        </el-form-item>
         <el-form-item label="年龄">
           <el-input v-model="memberForm.age" type="number" />
         </el-form-item>
@@ -130,6 +134,9 @@
         <el-form-item label="消费金额" required>
           <el-input v-model="transactionForm.amount" type="number" />
         </el-form-item>
+        <el-form-item label="出行方向" required>
+          <el-input v-model="transactionForm.destination" type="textarea" />
+        </el-form-item>
         <el-form-item label="备注">
           <el-input v-model="transactionForm.remark" type="textarea" />
         </el-form-item>
@@ -164,6 +171,7 @@
             {{ new Date(scope.row.createdAt).toLocaleString() }}
           </template>
         </el-table-column>
+        <el-table-column prop="destination" label="出行方向" />
         <el-table-column prop="remark" label="备注" />
       </el-table>
     </el-dialog>
@@ -197,11 +205,13 @@ const memberForm = ref({
   cardNumber: '',
   name: '',
   idNumber: '',
+  phoneNumber: '',
   age: null
 })
 
 const transactionForm = ref({
   amount: '',
+  destination: '',
   remark: ''
 })
 
@@ -235,6 +245,7 @@ const handleAddMember = async () => {
       cardNumber: '',
       name: '',
       idNumber: '',
+      phoneNumber: '',
       age: null
     }
   } catch (error) {
@@ -247,6 +258,7 @@ const showRechargeDialog = (member) => {
   rechargeDialogVisible.value = true
   transactionForm.value = {
     amount: '',
+    destination: '',
     remark: ''
   }
 }
@@ -256,6 +268,7 @@ const showConsumeDialog = (member) => {
   consumeDialogVisible.value = true
   transactionForm.value = {
     amount: '',
+    destination: '',
     remark: ''
   }
 }

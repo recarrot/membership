@@ -26,11 +26,25 @@ service.interceptors.response.use(
     return response.data
   },
   error => {
-    if (error.response.status === 401) {
+    // 检查是否是 401 未授权错误
+    if (error.response?.status === 401) {
       localStorage.removeItem('token')
       router.push('/login')
     }
-    ElMessage.error(error.response?.data?.message || '请求失败')
+
+    // 解析错误信息
+    let errorMessage = '请求失败'
+    if (error.response?.data) {
+      // 如果返回的是对象，尝试提取第一个错误信息
+      if (typeof error.response.data === 'object') {
+        errorMessage = Object.values(error.response.data)[0] || '未知错误'
+      } else {
+        errorMessage = error.response.data || '未知错误'
+      }
+    }
+
+    // 显示错误信息
+    ElMessage.error(errorMessage)
     return Promise.reject(error)
   }
 )

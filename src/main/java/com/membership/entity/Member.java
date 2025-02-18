@@ -40,4 +40,6 @@ public class Member {
 
     @Column(nullable = false)
     private Boolean isActive;
+
+    private String phoneNumber;
 }

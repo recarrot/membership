@@ -26,6 +26,9 @@ public class Transaction {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal amount;
 
+    @Column(nullable = false)
+    private String destination;
+
     private String remark;
 
     @Column(nullable = false)

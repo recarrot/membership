@@ -58,6 +58,8 @@ public class MemberService {
         member.setBalance(BigDecimal.ZERO);
         member.setIsActive(true);
 
+        member.setPhoneNumber(dto.getPhoneNumber());
+
         log.info("Creating new member: {}", dto.getCardNumber());
         return memberRepository.save(member);
     }
@@ -120,6 +122,7 @@ public class MemberService {
         transaction.setAmount(dto.getAmount());
         transaction.setRemark(dto.getRemark());
         transaction.setCreatedAt(LocalDateTime.now());
+        transaction.setDestination(dto.getDestination());
 
         log.info("Member {} consume: {}", member.getCardNumber(), dto.getAmount());
         return transactionRepository.save(transaction);

@@ -17,6 +17,9 @@ public class MemberCreateDTO {
     @Pattern(regexp = "^\\d{17}[0-9X]$", message = "身份证号格式不正确")
     private String idNumber;
 
+    @NotBlank(message = "手机号不能为空")
+    private String phoneNumber;
+
     private Integer age;
 }
 

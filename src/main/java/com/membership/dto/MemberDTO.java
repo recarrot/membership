@@ -11,6 +11,7 @@ public class MemberDTO {
     private Long id;
     private String cardNumber;
     private String name;
+    private String phoneNumber;
     private String idNumber;
     private Integer age;
     private LocalDateTime joinDate;
