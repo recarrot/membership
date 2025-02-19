@@ -61,6 +61,13 @@ public class MemberController {
         return ResponseEntity.ok(memberService.updateMemberStatus(id, isActive));
     }
 
+    @PutMapping("/{id}/updatePhoneNumber")
+    public ResponseEntity<Member> updatePhoneNumber(
+            @PathVariable Long id,
+            @RequestParam String phoneNumber){
+        return ResponseEntity.ok(memberService.updateMemberPhoneNumber(id, phoneNumber));
+    }
+
     @GetMapping("/statistics")
     public ResponseEntity<MemberStatisticsDTO> getStatistics() {
         return ResponseEntity.ok(memberService.getMemberStatistics());

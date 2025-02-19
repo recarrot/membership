@@ -1,5 +1,6 @@
 package com.membership.dto;
 
+import com.membership.enums.ConsumptionType;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -19,6 +20,7 @@ public class MemberDTO {
     private BigDecimal totalAmount;
     private BigDecimal balance;
     private Boolean isActive;
+    private ConsumptionType consumptionType;
 }
 
 // src/main/java/com/membership/dto/MemberStatisticsDTO.java

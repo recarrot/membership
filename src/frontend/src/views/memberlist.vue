@@ -5,7 +5,7 @@
       <el-button type="primary" @click="addDialogVisible = true">添加会员</el-button>
       <el-input
         v-model="searchKeyword"
-        placeholder="搜索会员卡号或姓名"
+        placeholder="搜索会员卡号或姓名或手机号"
         class="w-64"
         clearable
         @clear="loadMembers"
@@ -46,7 +46,7 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="操作" fixed="right" width="280">
+      <el-table-column label="操作" fixed="right" width="400">
         <template #default="scope">
           <el-button size="small" @click="showRechargeDialog(scope.row)">充值</el-button>
           <el-button size="small" type="success" @click="showConsumeDialog(scope.row)">消费</el-button>
@@ -58,6 +58,7 @@
           >
             {{ scope.row.isActive ? '停用' : '启用' }}
           </el-button>
+          <el-button size="small" @click="showChangePhoneNumberDialog(scope.row)">修改手机号</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -134,6 +135,12 @@
         <el-form-item label="消费金额" required>
           <el-input v-model="transactionForm.amount" type="number" />
         </el-form-item>
+        <el-form-item label="线路类型" required>
+          <el-radio-group v-model="transactionForm.consumptionType">
+            <el-radio label="LONGLINE">飞机/火车线</el-radio>
+            <el-radio label="SHORTLINE">汽车线</el-radio>
+          </el-radio-group>
+        </el-form-item>
         <el-form-item label="出行方向" required>
           <el-input v-model="transactionForm.destination" type="textarea" />
         </el-form-item>
@@ -171,10 +178,40 @@
             {{ new Date(scope.row.createdAt).toLocaleString() }}
           </template>
         </el-table-column>
+        <el-table-column label="线路类型" prop="consumptionType">
+          <template #default="scope">
+            <template v-if="getTagText(scope.row.consumptionType)">
+              <el-tag>
+                {{ getTagText(scope.row.consumptionType) }}
+              </el-tag>
+            </template>
+            <template v-else>
+              <!-- 空白内容 -->
+            </template>
+          </template>
+        </el-table-column>
         <el-table-column prop="destination" label="出行方向" />
         <el-table-column prop="remark" label="备注" />
       </el-table>
     </el-dialog>
+
+    <!-- 修改手机号 -->
+    <el-dialog
+      v-model="changePhoneNumberDialogVisible"
+      title="修改手机号"
+      width="500px"
+    >
+      <el-form :model="memberForm" label-width="100px">
+        <el-form-item label="手机号" required>
+          <el-input v-model="memberForm.phoneNumber" type="text" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="changePhoneNumberDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleUpdatePhoneNumber">确定</el-button>
+      </template>
+    </el-dialog>
+
   </div>
 </template>
 
@@ -187,7 +224,9 @@ import {
   recharge,
   consume,
   getTransactions,
-  updateMemberStatus
+  updateMemberStatus,
+  updateMemberPhoneNumber
+
 } from '@/api/member'
 
 const members = ref([])
@@ -196,6 +235,7 @@ const addDialogVisible = ref(false)
 const transactionDialogVisible = ref(false)
 const rechargeDialogVisible = ref(false)
 const consumeDialogVisible = ref(false)
+const changePhoneNumberDialogVisible = ref(false)
 const searchKeyword = ref('')
 const currentPage = ref(1)
 const pageSize = ref(10)
@@ -211,9 +251,11 @@ const memberForm = ref({
 
 const transactionForm = ref({
   amount: '',
+  consumptionType: '', // 初始值为空
   destination: '',
   remark: ''
 })
+
 
 const currentMember = ref(null)
 
@@ -263,6 +305,14 @@ const showRechargeDialog = (member) => {
   }
 }
 
+const showChangePhoneNumberDialog = (member) => {
+  currentMember.value = member;
+  memberForm.value.phoneNumber = member.phoneNumber; // 填充当前手机号
+  changePhoneNumberDialogVisible.value = true;
+};
+
+
+
 const showConsumeDialog = (member) => {
   currentMember.value = member
   consumeDialogVisible.value = true
@@ -284,7 +334,36 @@ const handleRecharge = async () => {
   }
 }
 
+const handleUpdatePhoneNumber = async () => {
+  const newPhoneNumber = memberForm.value.phoneNumber.trim();
+  if (!newPhoneNumber) {
+    ElMessage.error("手机号不能为空");
+    return;
+  }
+
+  try {
+    await updateMemberPhoneNumber(currentMember.value.id, newPhoneNumber);
+    ElMessage.success("手机号更新成功");
+    changePhoneNumberDialogVisible.value = false;
+    await loadMembers();
+  } catch (error) {
+    ElMessage.error('更新失败：' + error.response?.data?.message || '未知错误');
+  }
+};
+
 const handleConsume = async () => {
+  if (!transactionForm.value.amount){
+    ElMessage.error('请输入金额')
+    return
+  }
+  else if (!transactionForm.value.consumptionType) {
+    ElMessage.error('请选择线路类型')
+    return
+  }
+  else if (!transactionForm.value.destination){
+    ElMessage.error('请输入出行方向')
+    return
+  }
   try {
     await consume(currentMember.value.id, transactionForm.value)
     ElMessage.success('消费成功')
@@ -328,8 +407,28 @@ const handleCurrentChange = (val) => {
   currentPage.value = val
   loadMembers()
 }
+
+
 </script>
 
+<script>
+export default {
+  methods: {
+    getTagText(consumptionType) {
+      switch (consumptionType) {
+        case 'LONGLINE':
+          return '飞机/火车线';
+        case 'SHORTLINE':
+          return '汽车线';
+        case 'EMPTY':
+          return '';
+        default:
+          return 'ERROR';
+      }
+    }
+  }
+};
+</script>
 <style scoped>
 .member-container {
   padding: 20px;

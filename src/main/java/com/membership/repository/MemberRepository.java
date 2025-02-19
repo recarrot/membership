@@ -23,6 +23,6 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     @Query("SELECT AVG(m.totalAmount) FROM Member m WHERE m.consumptionCount > 0")
     BigDecimal averageConsumptionAmount();
 
-    Page<Member> findByCardNumberContainingOrNameContaining(
-            String cardNumber, String name, Pageable pageable);
+    Page<Member> findByCardNumberContainingOrNameContainingOrPhoneNumberContaining(
+            String cardNumber, String name, String phoneNumber, Pageable pageable);
 }

@@ -6,6 +6,7 @@ import com.membership.dto.MemberStatisticsDTO;
 import com.membership.dto.TransactionDTO;
 import com.membership.entity.Member;
 import com.membership.entity.Transaction;
+import com.membership.enums.ConsumptionType;
 import com.membership.enums.TransactionType;
 import com.membership.exception.BusinessException;
 import com.membership.repository.MemberRepository;
@@ -87,6 +88,7 @@ public class MemberService {
         transaction.setAmount(dto.getAmount());
         transaction.setRemark(dto.getRemark());
         transaction.setCreatedAt(LocalDateTime.now());
+        transaction.setConsumptionType(ConsumptionType.EMPTY);
 
         log.info("Member {} recharge: {}", member.getCardNumber(), dto.getAmount());
         return transactionRepository.save(transaction);
@@ -123,6 +125,7 @@ public class MemberService {
         transaction.setRemark(dto.getRemark());
         transaction.setCreatedAt(LocalDateTime.now());
         transaction.setDestination(dto.getDestination());
+        transaction.setConsumptionType(dto.getConsumptionType());
 
         log.info("Member {} consume: {}", member.getCardNumber(), dto.getAmount());
         return transactionRepository.save(transaction);
@@ -135,7 +138,12 @@ public class MemberService {
         if (!memberRepository.existsById(memberId)) {
             throw new BusinessException("会员不存在");
         }
-        return transactionRepository.findByMemberIdOrderByCreatedAtDesc(memberId, pageable);
+        try {
+            return transactionRepository.findByMemberIdOrderByCreatedAtDesc(memberId, pageable);
+        } catch (Exception e) {
+            log.error("查询会员交易记录异常：memberId={}, error={}", memberId, e.getMessage(), e);
+            throw new BusinessException("查询交易记录失败：" + e.getMessage());
+        }
     }
 
     /**
@@ -144,8 +152,8 @@ public class MemberService {
     public Page<MemberDTO> getMembers(String keyword, Pageable pageable) {
         Page<Member> members;
         if (StringUtils.hasText(keyword)) {
-            members = memberRepository.findByCardNumberContainingOrNameContaining(
-                    keyword, keyword, pageable);
+            members = memberRepository.findByCardNumberContainingOrNameContainingOrPhoneNumberContaining(
+                    keyword, keyword, keyword, pageable);
         } else {
             members = memberRepository.findAll(pageable);
         }
@@ -163,6 +171,19 @@ public class MemberService {
 
         member.setIsActive(isActive);
         log.info("Update member {} status to {}", member.getCardNumber(), isActive);
+        return memberRepository.save(member);
+    }
+
+    /**
+     * 修改会员手机号
+     */
+    @Transactional
+    public Member updateMemberPhoneNumber(Long memberId, String newPhoneNumber){
+        Member member = memberRepository.findById(memberId).orElseThrow(
+                () -> new BusinessException("会员不存在")
+        );
+        member.setPhoneNumber(newPhoneNumber);
+        log.info("Update member {} phoneNumber to {}", member.getCardNumber(), newPhoneNumber);
         return memberRepository.save(member);
     }
 

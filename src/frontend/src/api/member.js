@@ -54,3 +54,11 @@ export function getMemberStatistics() {
     method: 'get'
   })
 }
+
+export function updateMemberPhoneNumber(memberId, phoneNumber) {
+  return request({
+    url: `/members/${memberId}/updatePhoneNumber`,
+    method: 'put',
+    params: { phoneNumber }
+  })
+}
