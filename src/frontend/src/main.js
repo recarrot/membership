@@ -4,8 +4,13 @@ import 'element-plus/dist/index.css'
 import App from './App.vue'
 import router from './router'
 import './assets/main.css'
+import zhCn from 'element-plus/dist/locale/zh-cn.mjs';
 
 const app = createApp(App)
 app.use(ElementPlus)
 app.use(router)
+app.use(ElementPlus, {
+    locale: zhCn,
+});
 app.mount('#app')
+

@@ -36,6 +36,9 @@ public class Member {
     private BigDecimal totalAmount;
 
     @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal totalAmountBeforeDeduction;
+
+    @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal balance;
 
     @Column(nullable = false)

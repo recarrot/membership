@@ -34,6 +34,10 @@ public class Transaction {
     //金额
     private BigDecimal amount;
 
+    @Column(precision = 10, scale = 2)
+    //抵扣金额
+    private BigDecimal deductionAmount;
+
     @Column(nullable = false)
     //出行目的地
     private String destination;

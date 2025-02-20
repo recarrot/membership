@@ -21,6 +21,7 @@ import org.springframework.util.StringUtils;
 
 import javax.transaction.Transactional;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Service
@@ -106,15 +107,37 @@ public class MemberService {
             throw new BusinessException("会员已停用");
         }
 
-        // 检查余额是否足够
-        if (member.getBalance().compareTo(dto.getAmount()) < 0) {
-            throw new BusinessException("余额不足");
+        // 基本验证
+        if (dto.getDeductionAmount() == null) {
+            throw new BusinessException("消费时抵扣金额不能为空");
+        }
+
+        if (dto.getDeductionAmount().compareTo(BigDecimal.ZERO) < 0) {
+            throw new BusinessException("抵扣金额不能为负数");
+        }
+
+        if (dto.getDeductionAmount().compareTo(dto.getAmount()) > 0) {
+            throw new BusinessException("抵扣金额不能大于消费金额");
+        }
+
+        // 检查余额是否足够抵扣
+        if (member.getBalance().compareTo(dto.getDeductionAmount()) < 0) {
+            throw new BusinessException("余额不足以支付抵扣金额");
         }
 
         // 更新会员信息
-        member.setBalance(member.getBalance().subtract(dto.getAmount()));
+        member.setBalance(member.getBalance().subtract(dto.getDeductionAmount()));
         member.setConsumptionCount(member.getConsumptionCount() + 1);
-        member.setTotalAmount(member.getTotalAmount().add(dto.getAmount()));
+
+        // 确保totalAmountBeforeDeduction字段存在值
+        if (member.getTotalAmountBeforeDeduction() == null) {
+            member.setTotalAmountBeforeDeduction(member.getTotalAmount());
+        }
+
+        // 更新抵扣前和抵扣后的累计消费
+        member.setTotalAmountBeforeDeduction(member.getTotalAmountBeforeDeduction().add(dto.getAmount()));
+        member.setTotalAmount(member.getTotalAmount().add(dto.getDeductionAmount()));
+
         memberRepository.save(member);
 
         // 记录消费交易
@@ -122,26 +145,40 @@ public class MemberService {
         transaction.setMemberId(memberId);
         transaction.setType(TransactionType.CONSUMPTION);
         transaction.setAmount(dto.getAmount());
+        transaction.setDeductionAmount(dto.getDeductionAmount());
         transaction.setRemark(dto.getRemark());
         transaction.setCreatedAt(LocalDateTime.now());
         transaction.setDestination(dto.getDestination());
         transaction.setConsumptionType(dto.getConsumptionType());
 
-        log.info("Member {} consume: {}", member.getCardNumber(), dto.getAmount());
+        log.info("Member {} consume: amount={}, deduction={}",
+                member.getCardNumber(), dto.getAmount(), dto.getDeductionAmount());
         return transactionRepository.save(transaction);
     }
 
     /**
      * 查询会员交易记录
      */
-    public Page<Transaction> getMemberTransactions(Long memberId, Pageable pageable) {
+    public Page<Transaction> getMemberTransactions(Long memberId, String startDate, String endDate, Pageable pageable) {
         if (!memberRepository.existsById(memberId)) {
             throw new BusinessException("会员不存在");
         }
+
         try {
-            return transactionRepository.findByMemberIdOrderByCreatedAtDesc(memberId, pageable);
+            // 如果没有提供日期范围，则查询所有记录
+            if (startDate == null || endDate == null) {
+                return transactionRepository.findByMemberIdOrderByCreatedAtDesc(memberId, pageable);
+            }
+
+            // 解析日期并设置时间范围
+            LocalDateTime startDateTime = LocalDate.parse(startDate).atStartOfDay();
+            LocalDateTime endDateTime = LocalDate.parse(endDate).atTime(23, 59, 59);
+
+            return transactionRepository.findByMemberIdAndCreatedAtBetweenOrderByCreatedAtDesc(
+                    memberId, startDateTime, endDateTime, pageable);
         } catch (Exception e) {
-            log.error("查询会员交易记录异常：memberId={}, error={}", memberId, e.getMessage(), e);
+            log.error("查询会员交易记录异常：memberId={}, startDate={}, endDate={}, error={}",
+                    memberId, startDate, endDate, e.getMessage(), e);
             throw new BusinessException("查询交易记录失败：" + e.getMessage());
         }
     }

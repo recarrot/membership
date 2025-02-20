@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@element-plus/locale": "^0.0.5",
     "axios": "^1.6.2",
     "element-plus": "^2.9.4",
     "vue": "^3.3.8",

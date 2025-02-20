@@ -50,8 +50,10 @@ public class MemberController {
     @GetMapping("/{id}/transactions")
     public ResponseEntity<Page<Transaction>> getTransactions(
             @PathVariable Long id,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
             Pageable pageable) {
-        return ResponseEntity.ok(memberService.getMemberTransactions(id, pageable));
+        return ResponseEntity.ok(memberService.getMemberTransactions(id, startDate, endDate, pageable));
     }
 
     @PutMapping("/{id}/status")

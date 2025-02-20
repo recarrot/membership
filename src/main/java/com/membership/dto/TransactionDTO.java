@@ -13,10 +13,12 @@ public class TransactionDTO {
     @DecimalMin(value = "0.01", message = "金额必须大于0")
     private BigDecimal amount;
 
-//    @NotNull(message = "必须选择出行线路类型")
+    // 移除此字段的@NotNull验证，改为可选字段
+    private BigDecimal deductionAmount;
+
     private ConsumptionType consumptionType;
 
-    @NotNull(message = "必须填写出行目的地")
+    // 目的地仅当消费类型为CONSUMPTION时必填
     private String destination;
 
     private String remark;
