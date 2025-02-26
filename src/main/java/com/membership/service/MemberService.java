@@ -59,6 +59,7 @@ public class MemberService {
         member.setTotalAmount(BigDecimal.ZERO);
         member.setBalance(BigDecimal.ZERO);
         member.setIsActive(true);
+        member.setTotalAmountBeforeDeduction(BigDecimal.ZERO);
 
         member.setPhoneNumber(dto.getPhoneNumber());
 

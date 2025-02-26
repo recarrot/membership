@@ -3,10 +3,11 @@ import { ElMessage } from 'element-plus'
 import router from '@/router'
 
 const service = axios.create({
-  baseURL: '/api',
+  baseURL: '',
   timeout: 5000,
   withCredentials: true  // 添加这个配置
 })
+
 
 // 在请求拦截器中添加调试日志
 service.interceptors.request.use(

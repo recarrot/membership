@@ -10,7 +10,7 @@ export function login(data) {
 
 export function register(data) {
   return request({
-    url: '/api/auth/register',
+    url: '/auth/register',
     method: 'post',
     data
   })
@@ -18,14 +18,14 @@ export function register(data) {
 
 export function getCurrentUser() {
   return request({
-    url: '/api/auth/me',
+    url: '/auth/me',
     method: 'get'
   })
 }
 
 export function logout() {
   return request({
-    url: '/api/auth/logout',
+    url: '/auth/logout',
     method: 'post'
   })
 }
