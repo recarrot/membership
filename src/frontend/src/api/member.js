@@ -62,3 +62,12 @@ export function updateMemberPhoneNumber(memberId, phoneNumber) {
     params: { phoneNumber }
   })
 }
+
+export function updateMemberIdNumber(memberId, idNumber) {
+  return request({
+    url: `/api/members/${memberId}/updateIdNumber`,
+    method: 'put',
+    params: { idNumber }
+  })
+}
+

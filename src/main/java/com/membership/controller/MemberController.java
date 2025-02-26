@@ -70,6 +70,13 @@ public class MemberController {
         return ResponseEntity.ok(memberService.updateMemberPhoneNumber(id, phoneNumber));
     }
 
+    @PutMapping("/{id}/updateIdNumber")
+    public ResponseEntity<Member> updateIdNumber(
+            @PathVariable Long id,
+            @RequestParam String idNumber){
+        return ResponseEntity.ok(memberService.updateMemberIdNumber(id, idNumber));
+    }
+
     @GetMapping("/statistics")
     public ResponseEntity<MemberStatisticsDTO> getStatistics() {
         return ResponseEntity.ok(memberService.getMemberStatistics());

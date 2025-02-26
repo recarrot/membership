@@ -23,6 +23,7 @@ import javax.transaction.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Service
 @Transactional
@@ -40,19 +41,26 @@ public class MemberService {
      */
     public Member createMember(MemberCreateDTO dto) {
         // 验证会员卡号是否已存在
-        if (memberRepository.existsByCardNumber(dto.getCardNumber())) {
-            throw new BusinessException("会员卡号已存在");
-        }
+//        if (memberRepository.existsByCardNumber(dto.getCardNumber())) {
+//            throw new BusinessException("会员卡号已存在");
+//        }
 
         // 验证身份证号是否已被使用
-        if (memberRepository.existsByIdNumber(dto.getIdNumber())) {
-            throw new BusinessException("身份证号已被使用");
-        }
+//        if (memberRepository.existsByIdNumber(dto.getIdNumber())) {
+//            throw new BusinessException("身份证号已被使用");
+//        }
 
         Member member = new Member();
         member.setCardNumber(dto.getCardNumber());
         member.setName(dto.getName());
-        member.setIdNumber(dto.getIdNumber());
+        String IdNumber = dto.getIdNumber();
+        if (Objects.equals(IdNumber, "")){
+            member.setIdNumber(null);
+        }
+        else
+        {
+            member.setIdNumber(dto.getIdNumber());
+        }
         member.setAge(dto.getAge());
         member.setJoinDate(LocalDateTime.now());
         member.setConsumptionCount(0);
@@ -222,6 +230,19 @@ public class MemberService {
         );
         member.setPhoneNumber(newPhoneNumber);
         log.info("Update member {} phoneNumber to {}", member.getCardNumber(), newPhoneNumber);
+        return memberRepository.save(member);
+    }
+
+    /**
+     * 修改身份证
+     */
+    @Transactional
+    public Member updateMemberIdNumber(Long memberId, String newIdNumber){
+        Member member = memberRepository.findById(memberId).orElseThrow(
+                () -> new BusinessException("会员不存在")
+        );
+        member.setIdNumber(newIdNumber);
+        log.info("Update member {} IdNumber to {}", member.getCardNumber(), newIdNumber);
         return memberRepository.save(member);
     }
 

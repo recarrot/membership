@@ -13,11 +13,11 @@ public class MemberCreateDTO {
     @NotBlank(message = "会员名称不能为空")
     private String name;
 
-    @NotBlank(message = "身份证号不能为空")
-    @Pattern(regexp = "^\\d{17}[0-9X]$", message = "身份证号格式不正确")
+//    @NotBlank(message = "身份证号不能为空")
+//    @Pattern(regexp = "^\\d{17}[0-9X]$", message = "身份证号格式不正确")
     private String idNumber;
 
-    @NotBlank(message = "手机号不能为空")
+//    @NotBlank(message = "手机号不能为空")
     private String phoneNumber;
 
     private Integer age;

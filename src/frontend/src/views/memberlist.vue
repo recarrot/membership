@@ -116,7 +116,10 @@
           >
             {{ scope.row.isActive ? '停用' : '启用' }}
           </el-button>
+
+          <el-button size="small" @click="showChangeIDNumberDialog(scope.row)">修改身份证</el-button>
           <el-button size="small" @click="showChangePhoneNumberDialog(scope.row)">修改手机号</el-button>
+
         </template>
       </el-table-column>
     </el-table>
@@ -147,10 +150,10 @@
         <el-form-item label="姓名" required>
           <el-input v-model="memberForm.name" />
         </el-form-item>
-        <el-form-item label="身份证号" required>
+        <el-form-item label="身份证号">
           <el-input v-model="memberForm.idNumber" />
         </el-form-item>
-        <el-form-item label="手机号" required>
+        <el-form-item label="手机号">
           <el-input v-model="memberForm.phoneNumber" />
         </el-form-item>
         <el-form-item label="年龄">
@@ -335,6 +338,23 @@
         <el-button type="primary" @click="handleUpdatePhoneNumber">确定</el-button>
       </template>
     </el-dialog>
+
+    <!-- 修改身份证 -->
+    <el-dialog
+        v-model="changeIdNumberDialogVisible"
+        title="修改身份证"
+        width="500px"
+    >
+      <el-form :model="memberForm" label-width="100px">
+        <el-form-item label="身份证" required>
+          <el-input v-model="memberForm.idNumber" type="text" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="changeIdNumberDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleUpdateIDNumber">确定</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -349,7 +369,8 @@ import {
   consume,
   getTransactions,
   updateMemberStatus,
-  updateMemberPhoneNumber
+  updateMemberPhoneNumber,
+    updateMemberIdNumber
 } from '@/api/member'
 
 const members = ref([])
@@ -359,6 +380,7 @@ const transactionDialogVisible = ref(false)
 const rechargeDialogVisible = ref(false)
 const consumeDialogVisible = ref(false)
 const changePhoneNumberDialogVisible = ref(false)
+const changeIdNumberDialogVisible = ref(false)
 const searchKeyword = ref('')
 const currentPage = ref(1)
 const pageSize = ref(10)
@@ -374,7 +396,7 @@ const transactionsLoading = ref(false)
 const memberForm = ref({
   cardNumber: '',
   name: '',
-  idNumber: '',
+  idNumber: null,
   phoneNumber: '',
   age: null
 })
@@ -544,14 +566,18 @@ const loadMembers = async () => {
 
 const handleAddMember = async () => {
   try {
-    await createMember(memberForm.value)
+    const formData = {...memberForm.value};
+    if (formData.idNumber === '') {
+      formData.idNumber = null;
+    }
+    await createMember(formData)
     ElMessage.success('添加会员成功')
     addDialogVisible.value = false
     await loadMembers()
     memberForm.value = {
       cardNumber: '',
       name: '',
-      idNumber: '',
+      idNumber: null,
       phoneNumber: '',
       age: null
     }
@@ -574,6 +600,12 @@ const showChangePhoneNumberDialog = (member) => {
   currentMember.value = member;
   memberForm.value.phoneNumber = member.phoneNumber; // 填充当前手机号
   changePhoneNumberDialogVisible.value = true;
+};
+
+const showChangeIDNumberDialog = (member) => {
+  currentMember.value = member;
+  memberForm.value.idNumber = member.idNumber; // 填充当前手机号
+  changeIdNumberDialogVisible.value = true;
 };
 
 const showConsumeDialog = (member) => {
@@ -614,6 +646,22 @@ const handleUpdatePhoneNumber = async () => {
     await updateMemberPhoneNumber(currentMember.value.id, newPhoneNumber);
     ElMessage.success("手机号更新成功");
     changePhoneNumberDialogVisible.value = false;
+    await loadMembers();
+  } catch (error) {
+    ElMessage.error('更新失败：' + error.response?.data?.message || '未知错误');
+  }
+};
+const handleUpdateIDNumber = async () => {
+  const newIDNumber = memberForm.value.idNumber.trim();
+  if (!newIDNumber) {
+    ElMessage.error("身份证不能为空");
+    return;
+  }
+
+  try {
+    await updateMemberIdNumber(currentMember.value.id, newIDNumber);
+    ElMessage.success("身份证更新成功");
+    changeIdNumberDialogVisible.value = false;
     await loadMembers();
   } catch (error) {
     ElMessage.error('更新失败：' + error.response?.data?.message || '未知错误');
