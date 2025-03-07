@@ -42,11 +42,12 @@ public class AuthService {
         UserDetails userDetails = org.springframework.security.core.userdetails.User
                 .withUsername(user.getUsername())
                 .password(user.getPassword())
-                .roles(user.getRole())
+                .roles(user.getRole().replace("ROLE_", ""))
                 .build();
 
+        log.info("创建UserDetails - 用户名: {}, 角色: {}", user.getUsername(), user.getRole());
         String token = jwtService.generateToken(userDetails);
-        log.info("Login successful, token generated for user: {}", request.getUsername());
+        log.info("生成JWT token成功 - 用户名: {}, token: {}", request.getUsername(), token);
 
         return JwtResponse.builder()
                 .token(token)

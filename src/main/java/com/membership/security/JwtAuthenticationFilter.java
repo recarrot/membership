@@ -11,6 +11,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -24,6 +26,8 @@ import java.util.List;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
+    private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
+
     @Autowired
     private JwtUtil jwtUtil;
 
@@ -35,6 +39,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             "/api/auth/login",
             "/api/auth/register",
             "/login",
+            "/members",
             "/index.html",
             "/static",
             "/js",
@@ -47,40 +52,47 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        // 检查路径是否需要跳过验证
         String path = request.getRequestURI();
+        log.info("处理请求: {} {}", request.getMethod(), path);
+
         if (shouldNotFilter(request)) {
+            log.info("跳过JWT验证的路径: {}", path);
             filterChain.doFilter(request, response);
             return;
         }
 
         final String authHeader = request.getHeader("Authorization");
+        
         String username = null;
         String jwt = null;
 
-        // 检查是否有JWT TOKEN
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             jwt = authHeader.substring(7);
+            log.info("提取到JWT token");
             try {
                 username = jwtUtil.extractUsername(jwt);
+                log.info("从JWT中提取的用户名: {}", username);
             } catch (ExpiredJwtException e) {
-                // JWT过期处理
-                logger.warn("JWT Token已过期");
+                log.warn("JWT Token已过期: {}", e.getMessage());
             } catch (Exception e) {
-                // 其他JWT解析异常
-                logger.error("JWT Token解析错误", e);
+                log.error("JWT Token解析错误: {}", e.getMessage());
             }
+        } else {
+            log.warn("未找到有效的Authorization头");
         }
 
-        // 验证JWT并设置安全上下文
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
+            log.info("加载到用户详情: {}", username);
 
             if (jwtUtil.validateToken(jwt, userDetails)) {
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities());
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authToken);
+                log.info("JWT验证成功，已设置安全上下文");
+            } else {
+                log.warn("JWT验证失败");
             }
         }
 
@@ -90,8 +102,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
         String path = request.getRequestURI();
-        return excludedPaths.stream().anyMatch(path::startsWith) ||
+        boolean shouldNotFilter = excludedPaths.stream().anyMatch(path::startsWith) ||
                 path.contains(".") || // 静态资源通常包含点号
                 request.getMethod().equals("OPTIONS"); // 预检请求
+        
+        if (shouldNotFilter) {
+            log.info("请求 {} 不需要JWT验证", path);
+        }
+        
+        return shouldNotFilter;
     }
 }

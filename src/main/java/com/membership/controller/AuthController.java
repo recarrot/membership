@@ -24,10 +24,10 @@ public class AuthController {
         log.info("Received login request for username: {}", request.getUsername());
         try {
             JwtResponse response = authService.login(request);
-            log.info("Login successful for username: {}", request.getUsername());
+            log.info("登录成功 - 用户名: {}", request.getUsername());
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            log.error("Login failed for username: {}", request.getUsername(), e);
+            log.error("登录失败 - 用户名: {}, 错误: {}", request.getUsername(), e.getMessage(), e);
             throw e;
         }
     }

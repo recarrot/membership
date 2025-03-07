@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { isTokenValid, clearAuth } from '@/utils/auth'
 import Login from '@/views/login.vue'
 import MemberList from '@/views/memberlist.vue'
 
@@ -25,17 +26,18 @@ const router = createRouter({
   routes
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
+  const isValid = isTokenValid()
+
   if (to.matched.some(record => record.meta.requiresAuth)) {
-    const token = localStorage.getItem('token')
-    if (!token) {
+    if (!isValid) {
+      clearAuth()
       next('/login')
-    } else {
-      next()
+      return
     }
-  } else {
-    next()
   }
+
+  next()
 })
 
 export default router

@@ -1,360 +1,436 @@
 <template>
-  <div class="member-container p-4">
-    <!-- 顶部操作栏 -->
+  <div class="member-list-container">
+    <Header />
+    <div class="content">
+      <div class="member-container p-4">
+        <!-- 顶部操作栏 -->
+        <div class="mb-4 flex justify-between items-center">
+          <el-button type="primary" @click="addDialogVisible = true">添加会员</el-button>
 
-    <div class="mb-4 flex justify-between items-center">
-      <el-button type="primary" @click="addDialogVisible = true">添加会员</el-button>
+          <!-- 时间筛选按钮 -->
+          <div class="time-filter-container">
+            <el-button
+                :type="activeTimeFilter === 'all' ? 'primary' : 'default'"
+                @click="toggleTimeFilter('all')">
+              全部时间
+            </el-button>
+            <el-button
+                :type="activeTimeFilter === 'month' ? 'primary' : 'default'"
+                @click="toggleTimeFilter('month')">
+              一个月内
+            </el-button>
+            <el-button
+                :type="activeTimeFilter === 'quarter' ? 'primary' : 'default'"
+                @click="toggleTimeFilter('quarter')">
+              一个季度内
+            </el-button>
+            <el-button
+                :type="activeTimeFilter === 'year' ? 'primary' : 'default'"
+                @click="toggleTimeFilter('year')">
+              一年内
+            </el-button>
+          </div>
 
-      <!-- 时间筛选按钮 -->
-      <div class="time-filter-container">
-        <el-button
-            :type="activeTimeFilter === 'all' ? 'primary' : 'default'"
-            @click="toggleTimeFilter('all')">
-          全部时间
-        </el-button>
-        <el-button
-            :type="activeTimeFilter === 'month' ? 'primary' : 'default'"
-            @click="toggleTimeFilter('month')">
-          一个月内
-        </el-button>
-        <el-button
-            :type="activeTimeFilter === 'quarter' ? 'primary' : 'default'"
-            @click="toggleTimeFilter('quarter')">
-          一个季度内
-        </el-button>
-        <el-button
-            :type="activeTimeFilter === 'year' ? 'primary' : 'default'"
-            @click="toggleTimeFilter('year')">
-          一年内
-        </el-button>
-      </div>
-
-      <!-- 搜索输入框 -->
-      <el-input
-          v-model="searchKeyword"
-          placeholder="搜索会员卡号或姓名或手机号"
-          class="w-64"
-          clearable
-          @clear="loadMembers"
-          @keyup.enter="loadMembers"
-      >
-        <template #append>
-          <el-button @click="loadMembers">搜索</el-button>
-        </template>
-      </el-input>
-    </div>
-
-    <!-- 会员列表表格 -->
-    <el-table :data="members" border stripe  v-loading="loading">
-      <el-table-column prop="cardNumber" label="会员卡号" width="120" />
-      <el-table-column prop="name" label="姓名" width="100" />
-      <el-table-column prop="phoneNumber" label="手机号" width="120" />
-      <el-table-column prop="idNumber" label="身份证号" width="180" />
-      <el-table-column prop="joinDate" label="入会时间" width="90">
-        <template #default="scope">
-          {{ new Date(scope.row.joinDate).toLocaleDateString() }}
-        </template>
-      </el-table-column>
-      <!-- 筛选后的消费次数 -->
-      <el-table-column label="筛选期内消费次数" width="75">
-        <template #default="scope">
-          {{ scope.row.filteredConsumptionCount || 0 }}次
-        </template>
-      </el-table-column>
-
-      <!-- 筛选后的抵扣前消费总额 -->
-      <el-table-column label="筛选期内抵扣前消费" width="90">
-        <template #default="scope">
-          ¥{{ scope.row.filteredAmountBeforeDeduction?.toFixed(2) || '0.00' }}
-        </template>
-      </el-table-column>
-
-      <!-- 筛选后的抵扣额 -->
-      <el-table-column label="筛选期内抵扣金额" width="90">
-        <template #default="scope">
-          ¥{{ scope.row.filteredDeductionAmount?.toFixed(2) || '0.00' }}
-        </template>
-      </el-table-column>
-
-      <!-- 历史总数据，可以保留或根据需要调整 -->
-      <el-table-column label="历史消费次数" width="75" >
-      <template #default="scope">
-        {{ scope.row.consumptionCount || 0 }}次
-      </template>
-      </el-table-column>
-      <el-table-column prop="totalAmountBeforeDeduction" label="历史抵扣前累计消费" width="90">
-        <template #default="scope">
-          ¥{{ scope.row.totalAmountBeforeDeduction?.toFixed(2) || scope.row.totalAmount.toFixed(2) }}
-        </template>
-      </el-table-column>
-      <el-table-column prop="totalAmount" label="历史累计抵扣金额" width="90">
-        <template #default="scope">
-          ¥{{ scope.row.totalAmount?.toFixed(2) || '0.00' }}
-        </template>
-      </el-table-column>
-      <el-table-column prop="balance" label="账户余额" width="90">
-        <template #default="scope">
-          ¥{{ scope.row.balance.toFixed(2) }}
-        </template>
-      </el-table-column>
-      <el-table-column prop="isActive" label="状态" width="100">
-        <template #default="scope">
-          <el-tag :type="scope.row.isActive ? 'success' : 'danger'">
-            {{ scope.row.isActive ? '正常' : '停用' }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" fixed="right" width="400">
-        <template #default="scope">
-          <el-button size="small" @click="showRechargeDialog(scope.row)">充值</el-button>
-          <el-button size="small" type="success" @click="showConsumeDialog(scope.row)">消费</el-button>
-          <el-button size="small" type="primary" @click="showTransactions(scope.row)">记录</el-button>
-          <el-button
-              size="small"
-              :type="scope.row.isActive ? 'danger' : 'success'"
-              @click="toggleMemberStatus(scope.row)"
+          <!-- 搜索输入框 -->
+          <el-input
+              v-model="searchKeyword"
+              placeholder="搜索会员卡号或姓名或手机号"
+              class="w-64"
+              clearable
+              @clear="loadMembers"
+              @keyup.enter="loadMembers"
           >
-            {{ scope.row.isActive ? '停用' : '启用' }}
-          </el-button>
+            <template #append>
+              <el-button @click="loadMembers">搜索</el-button>
+            </template>
+          </el-input>
+        </div>
 
-          <el-button size="small" @click="showChangeIDNumberDialog(scope.row)">修改身份证</el-button>
-          <el-button size="small" @click="showChangePhoneNumberDialog(scope.row)">修改手机号</el-button>
+        <!-- 会员列表表格 -->
+        <el-table :data="members" border stripe  v-loading="loading">
+          <el-table-column prop="cardNumber" label="会员卡号" width="120" />
+          <el-table-column prop="name" label="姓名" width="100" />
+          <el-table-column prop="phoneNumber" label="手机号" width="120" />
+          <el-table-column prop="idNumber" label="身份证号" width="180" />
+          <el-table-column prop="joinDate" label="入会时间" width="90">
+            <template #default="scope">
+              {{ new Date(scope.row.joinDate).toLocaleDateString() }}
+            </template>
+          </el-table-column>
+          <!-- 筛选后的消费次数 -->
+          <el-table-column label="筛选期内消费次数" width="75">
+            <template #default="scope">
+              {{ scope.row.filteredConsumptionCount || 0 }}次
+            </template>
+          </el-table-column>
 
-        </template>
-      </el-table-column>
-    </el-table>
+          <!-- 筛选后的抵扣前消费总额 -->
+          <el-table-column label="筛选期内抵扣前消费" width="90">
+            <template #default="scope">
+              ¥{{ scope.row.filteredAmountBeforeDeduction?.toFixed(2) || '0.00' }}
+            </template>
+          </el-table-column>
 
-    <!-- 分页 -->
-    <div class="mt-4 flex justify-end">
-      <el-pagination
-          v-model:current-page="currentPage"
-          v-model:page-size="pageSize"
-          :total="total"
-          :page-sizes="[10, 20, 50, 100]"
-          layout="total, sizes, prev, pager, next"
-          @size-change="handleSizeChange"
-          @current-change="handleCurrentChange"
-      />
-    </div>
+          <!-- 筛选后的抵扣额 -->
+          <el-table-column label="筛选期内抵扣金额" width="90">
+            <template #default="scope">
+              ¥{{ scope.row.filteredDeductionAmount?.toFixed(2) || '0.00' }}
+            </template>
+          </el-table-column>
 
-    <!-- 添加会员对话框 -->
-    <el-dialog
-        v-model="addDialogVisible"
-        title="添加会员"
-        width="500px"
-    >
-      <el-form :model="memberForm" label-width="100px">
-        <el-form-item label="会员卡号" required>
-          <el-input v-model="memberForm.cardNumber" />
-        </el-form-item>
-        <el-form-item label="姓名" required>
-          <el-input v-model="memberForm.name" />
-        </el-form-item>
-        <el-form-item label="身份证号">
-          <el-input v-model="memberForm.idNumber" />
-        </el-form-item>
-        <el-form-item label="手机号">
-          <el-input v-model="memberForm.phoneNumber" />
-        </el-form-item>
-        <el-form-item label="年龄">
-          <el-input v-model="memberForm.age" type="number" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="addDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleAddMember">确定</el-button>
-      </template>
-    </el-dialog>
-
-    <!-- 充值对话框 -->
-    <el-dialog
-        v-model="rechargeDialogVisible"
-        title="会员充值"
-        width="500px"
-    >
-      <el-form :model="transactionForm" label-width="100px">
-        <el-form-item label="充值金额" required>
-          <el-input v-model="transactionForm.amount" type="number" />
-        </el-form-item>
-        <el-form-item label="备注">
-          <el-input v-model="transactionForm.remark" type="textarea" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="rechargeDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleRecharge">确定</el-button>
-      </template>
-    </el-dialog>
-
-    <!-- 消费对话框 -->
-    <el-dialog
-        v-model="consumeDialogVisible"
-        title="会员消费"
-        width="500px"
-    >
-      <el-form :model="transactionForm" label-width="120px">
-        <el-form-item label="消费金额" required>
-          <el-input v-model="transactionForm.amount" type="number" placeholder="填写折扣前的消费金额" />
-        </el-form-item>
-        <el-form-item label="线路类型" required>
-          <el-radio-group
-              v-model="transactionForm.consumptionType"
-              @change="handleConsumptionTypeChange"
-          >
-            <el-radio label="LONGLINE">飞机/火车线</el-radio>
-            <el-radio label="SHORTLINE">汽车线</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="抵扣金额" required>
-          <el-input v-model="transactionForm.deductionAmount" type="number" />
-          <div class="text-xs text-gray-500 mt-1">抵扣金额从余额扣除</div>
-        </el-form-item>
-        <el-form-item label="出行方向" required>
-          <el-input v-model="transactionForm.destination" type="textarea" />
-        </el-form-item>
-        <el-form-item label="备注">
-          <el-input v-model="transactionForm.remark" type="textarea" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="consumeDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleConsume">确定</el-button>
-      </template>
-    </el-dialog>
-
-    <!-- 交易记录对话框 -->
-    <el-dialog
-        v-model="transactionDialogVisible"
-        title="交易记录"
-        width="900px"
-    >
-      <!-- 时间筛选 -->
-      <div style="margin-bottom: 20px;">
-        <el-date-picker
-            v-model="selectedTimeRange"
-            type="daterange"
-            range-separator="至"
-            start-placeholder="开始日期"
-            end-placeholder="结束日期"
-            value-format="YYYY-MM-DD"
-            @change="handleTimeRangeChange"
-        />
-        <el-button
-            style="margin-left: 10px;"
-            @click="clearTimeRange"
-        >
-          清除
-        </el-button>
-      </div>
-      <el-table :data="filteredTransactions" border stripe v-loading="transactionsLoading">
-        <el-table-column prop="type" label="类型" width="90">
+          <!-- 历史总数据，可以保留或根据需要调整 -->
+          <el-table-column label="历史消费次数" width="75" >
           <template #default="scope">
-            <el-tag :type="scope.row.type === 'RECHARGE' ? 'success' : 'warning'">
-              {{ scope.row.type === 'RECHARGE' ? '充值' : '消费' }}
-            </el-tag>
+            {{ scope.row.consumptionCount || 0 }}次
           </template>
-        </el-table-column>
-        <el-table-column label="消费金额" width="110">
-          <template #default="scope">
-            <template v-if="scope.row.type === 'CONSUMPTION'">
-              ¥{{ scope.row.amount.toFixed(2) }}
+          </el-table-column>
+          <el-table-column prop="totalAmountBeforeDeduction" label="历史抵扣前累计消费" width="90">
+            <template #default="scope">
+              ¥{{ scope.row.totalAmountBeforeDeduction?.toFixed(2) || scope.row.totalAmount.toFixed(2) }}
             </template>
-            <template v-else>
-              -
+          </el-table-column>
+          <el-table-column prop="totalAmount" label="历史累计抵扣金额" width="90">
+            <template #default="scope">
+              ¥{{ scope.row.totalAmount?.toFixed(2) || '0.00' }}
             </template>
-          </template>
-        </el-table-column>
-        <el-table-column label="抵扣金额" width="110">
-          <template #default="scope">
-            <template v-if="scope.row.type === 'CONSUMPTION' && scope.row.deductionAmount !== null">
-              ¥{{ scope.row.deductionAmount.toFixed(2) }}
+          </el-table-column>
+          <el-table-column prop="balance" label="账户余额" width="90">
+            <template #default="scope">
+              ¥{{ scope.row.balance.toFixed(2) }}
             </template>
-            <template v-else-if="scope.row.type === 'CONSUMPTION' && scope.row.deductionAmount === null">
-              ¥{{ scope.row.amount.toFixed(2) }}
-            </template>
-            <template v-else>
-              -
-            </template>
-          </template>
-        </el-table-column>
-        <el-table-column label="充值金额" width="110">
-          <template #default="scope">
-            <template v-if="scope.row.type === 'RECHARGE'">
-              ¥{{ scope.row.amount.toFixed(2) }}
-            </template>
-            <template v-else>
-              -
-            </template>
-          </template>
-        </el-table-column>
-        <el-table-column prop="createdAt" label="时间" width="160">
-          <template #default="scope">
-            {{ new Date(scope.row.createdAt).toLocaleString() }}
-          </template>
-        </el-table-column>
-        <el-table-column label="线路类型" prop="consumptionType" width="100">
-          <template #default="scope">
-            <template v-if="getTagText(scope.row.consumptionType)">
-              <el-tag>
-                {{ getTagText(scope.row.consumptionType) }}
+          </el-table-column>
+          <el-table-column prop="isActive" label="状态" width="100">
+            <template #default="scope">
+              <el-tag :type="scope.row.isActive ? 'success' : 'danger'">
+                {{ scope.row.isActive ? '正常' : '停用' }}
               </el-tag>
             </template>
-            <template v-else>
-              <!-- 空白内容 -->
+          </el-table-column>
+          <el-table-column label="操作" fixed="right" width="400">
+            <template #default="scope">
+              <el-button size="small" @click="showRechargeDialog(scope.row)">充值</el-button>
+              <el-button size="small" type="success" @click="showConsumeDialog(scope.row)">消费</el-button>
+              <el-button size="small" type="primary" @click="showTransactions(scope.row)">记录</el-button>
+              <el-button
+                  size="small"
+                  :type="scope.row.isActive ? 'danger' : 'success'"
+                  @click="toggleMemberStatus(scope.row)"
+              >
+                {{ scope.row.isActive ? '停用' : '启用' }}
+              </el-button>
+
+              <el-button size="small" @click="showChangeIDNumberDialog(scope.row)">修改身份证</el-button>
+              <el-button size="small" @click="showChangePhoneNumberDialog(scope.row)">修改手机号</el-button>
             </template>
+          </el-table-column>
+        </el-table>
+
+        <!-- 交易记录表格中的编辑按钮列 -->
+        <el-table-column v-if="isAdmin" label="编辑" width="120">
+          <template #default="scope">
+            <el-button 
+              type="primary" 
+              size="small" 
+              @click="showEditTransactionDialog(scope.row)"
+            >
+              编辑
+            </el-button>
           </template>
         </el-table-column>
-        <el-table-column prop="destination" label="出行方向" />
-        <el-table-column prop="remark" label="备注" />
-      </el-table>
 
-      <!-- 分页控件 -->
-      <div class="mt-4 flex justify-end">
-        <el-pagination
-            v-model:current-page="transactionCurrentPage"
-            v-model:page-size="transactionPageSize"
-            :page-sizes="[10, 20, 50, 100]"
-            layout="total, sizes, prev, pager, next, jumper"
-            :total="transactionTotal"
-            @size-change="handleTransactionSizeChange"
-            @current-change="handleTransactionPageChange"
-        />
+        <!-- 分页 -->
+        <div class="mt-4 flex justify-end">
+          <el-pagination
+              :current-page="currentPage"
+              :page-size="pageSize"
+              :total="total"
+              :page-sizes="[10, 20, 50, 100]"
+              layout="total, sizes, prev, pager, next"
+              @size-change="handleSizeChange"
+              @current-change="handleCurrentChange"
+          />
+        </div>
+
+        <!-- 添加会员对话框 -->
+        <el-dialog
+            v-model="addDialogVisible"
+            title="添加会员"
+            width="500px"
+        >
+          <el-form :model="memberForm" label-width="100px">
+            <el-form-item label="会员卡号" required>
+              <el-input v-model="memberForm.cardNumber" />
+            </el-form-item>
+            <el-form-item label="姓名" required>
+              <el-input v-model="memberForm.name" />
+            </el-form-item>
+            <el-form-item label="身份证号">
+              <el-input v-model="memberForm.idNumber" />
+            </el-form-item>
+            <el-form-item label="手机号">
+              <el-input v-model="memberForm.phoneNumber" />
+            </el-form-item>
+            <el-form-item label="年龄">
+              <el-input v-model="memberForm.age" type="number" />
+            </el-form-item>
+          </el-form>
+          <template #footer>
+            <el-button @click="addDialogVisible = false">取消</el-button>
+            <el-button type="primary" @click="handleAddMember">确定</el-button>
+          </template>
+        </el-dialog>
+
+        <!-- 充值对话框 -->
+        <el-dialog
+            v-model="rechargeDialogVisible"
+            title="会员充值"
+            width="500px"
+        >
+          <el-form :model="transactionForm" label-width="100px">
+            <el-form-item label="充值金额" required>
+              <el-input v-model="transactionForm.amount" type="number" />
+            </el-form-item>
+            <el-form-item label="备注">
+              <el-input v-model="transactionForm.remark" type="textarea" />
+            </el-form-item>
+          </el-form>
+          <template #footer>
+            <el-button @click="rechargeDialogVisible = false">取消</el-button>
+            <el-button type="primary" @click="handleRecharge">确定</el-button>
+          </template>
+        </el-dialog>
+
+        <!-- 消费对话框 -->
+        <el-dialog
+            v-model="consumeDialogVisible"
+            title="会员消费"
+            width="500px"
+        >
+          <el-form :model="transactionForm" label-width="120px">
+            <el-form-item label="消费金额" required>
+              <el-input v-model="transactionForm.amount" type="number" placeholder="填写折扣前的消费金额" />
+            </el-form-item>
+            <el-form-item label="线路类型" required>
+              <el-radio-group
+                  v-model="transactionForm.consumptionType"
+                  @change="handleConsumptionTypeChange"
+              >
+                <el-radio label="LONGLINE">飞机/火车线</el-radio>
+                <el-radio label="SHORTLINE">汽车线</el-radio>
+              </el-radio-group>
+            </el-form-item>
+            <el-form-item label="抵扣金额" required>
+              <el-input v-model="transactionForm.deductionAmount" type="number" />
+              <div class="text-xs text-gray-500 mt-1">抵扣金额从余额扣除</div>
+            </el-form-item>
+            <el-form-item label="出行方向" required>
+              <el-input v-model="transactionForm.destination" type="textarea" />
+            </el-form-item>
+            <el-form-item label="备注">
+              <el-input v-model="transactionForm.remark" type="textarea" />
+            </el-form-item>
+          </el-form>
+          <template #footer>
+            <el-button @click="consumeDialogVisible = false">取消</el-button>
+            <el-button type="primary" @click="handleConsume">确定</el-button>
+          </template>
+        </el-dialog>
+
+        <!-- 交易记录对话框 -->
+        <el-dialog
+            v-model="transactionDialogVisible"
+            title="交易记录"
+            width="1200px"
+        >
+          <!-- 交易记录头部信息 -->
+          <div style="margin-bottom: 10px; padding: 10px; background-color: #f0f9eb; border-radius: 4px;">
+            <p v-if="isAdmin"><strong>提示：</strong> 您可以点击"编辑"按钮修改账单详情。</p>
+            <p v-else><strong>提示：</strong> 您可以查看账单详情。</p>
+          </div>
+          
+          <div style="margin-bottom: 20px;">
+            <el-date-picker
+                v-model="selectedTimeRange"
+                type="daterange"
+                range-separator="至"
+                start-placeholder="开始日期"
+                end-placeholder="结束日期"
+                value-format="YYYY-MM-DD"
+                @change="handleTimeRangeChange"
+            />
+            <el-button
+                style="margin-left: 10px;"
+                @click="clearTimeRange"
+            >
+              清除
+            </el-button>
+          </div>
+          <el-table :data="filteredTransactions" border stripe v-loading="transactionsLoading">
+            <el-table-column prop="type" label="类型" width="80">
+              <template #default="scope">
+                <el-tag :type="scope.row.type === 'RECHARGE' ? 'success' : 'warning'">
+                  {{ scope.row.type === 'RECHARGE' ? '充值' : '消费' }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="消费金额" width="100">
+              <template #default="scope">
+                <template v-if="scope.row.type === 'CONSUMPTION'">
+                  ¥{{ scope.row.amount.toFixed(2) }}
+                </template>
+                <template v-else>
+                  -
+                </template>
+              </template>
+            </el-table-column>
+            <el-table-column label="抵扣金额" width="100">
+              <template #default="scope">
+                <template v-if="scope.row.type === 'CONSUMPTION' && scope.row.deductionAmount !== null">
+                  ¥{{ scope.row.deductionAmount.toFixed(2) }}
+                </template>
+                <template v-else-if="scope.row.type === 'CONSUMPTION' && scope.row.deductionAmount === null">
+                  ¥{{ scope.row.amount.toFixed(2) }}
+                </template>
+                <template v-else>
+                  -
+                </template>
+              </template>
+            </el-table-column>
+            <el-table-column label="充值金额" width="100">
+              <template #default="scope">
+                <template v-if="scope.row.type === 'RECHARGE'">
+                  ¥{{ scope.row.amount.toFixed(2) }}
+                </template>
+                <template v-else>
+                  -
+                </template>
+              </template>
+            </el-table-column>
+            <el-table-column prop="createdAt" label="时间" width="150">
+              <template #default="scope">
+                {{ new Date(scope.row.createdAt).toLocaleString() }}
+              </template>
+            </el-table-column>
+            <el-table-column label="线路类型" prop="consumptionType" width="100">
+              <template #default="scope">
+                <template v-if="getTagText(scope.row.consumptionType)">
+                  <el-tag>
+                    {{ getTagText(scope.row.consumptionType) }}
+                  </el-tag>
+                </template>
+                <template v-else>
+                  <!-- 空白内容 -->
+                </template>
+              </template>
+            </el-table-column>
+            <el-table-column prop="destination" label="出行方向" min-width="200" />
+            <el-table-column prop="remark" label="备注" min-width="200" />
+            <!-- 只有管理员才显示编辑按钮 -->
+            <el-table-column v-if="isAdmin" label="编辑" width="80" fixed="right">
+              <template #default="scope">
+                <el-button 
+                  type="primary" 
+                  size="small" 
+                  @click="showEditTransactionDialog(scope.row)"
+                >
+                  编辑
+                </el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+
+          <!-- 分页控件 -->
+          <div class="mt-4 flex justify-end">
+            <el-pagination
+                :current-page="transactionCurrentPage"
+                :page-size="transactionPageSize"
+                :page-sizes="[10, 20, 50, 100]"
+                layout="total, sizes, prev, pager, next, jumper"
+                :total="transactionTotal"
+                @size-change="handleTransactionSizeChange"
+                @current-change="handleTransactionPageChange"
+            />
+          </div>
+        </el-dialog>
+
+        <!-- 修改手机号 -->
+        <el-dialog
+            v-model="changePhoneNumberDialogVisible"
+            title="修改手机号"
+            width="500px"
+        >
+          <el-form :model="memberForm" label-width="100px">
+            <el-form-item label="手机号" required>
+              <el-input v-model="memberForm.phoneNumber" type="text" />
+            </el-form-item>
+          </el-form>
+          <template #footer>
+            <el-button @click="changePhoneNumberDialogVisible = false">取消</el-button>
+            <el-button type="primary" @click="handleUpdatePhoneNumber">确定</el-button>
+          </template>
+        </el-dialog>
+
+        <!-- 修改身份证 -->
+        <el-dialog
+            v-model="changeIdNumberDialogVisible"
+            title="修改身份证"
+            width="500px"
+        >
+          <el-form :model="memberForm" label-width="100px">
+            <el-form-item label="身份证" required>
+              <el-input v-model="memberForm.idNumber" type="text" />
+            </el-form-item>
+          </el-form>
+          <template #footer>
+            <el-button @click="changeIdNumberDialogVisible = false">取消</el-button>
+            <el-button type="primary" @click="handleUpdateIDNumber">确定</el-button>
+          </template>
+        </el-dialog>
+
+        <!-- 编辑账单对话框 -->
+        <el-dialog
+          v-model="editTransactionDialogVisible"
+          :title="editTransactionForm.type === 'RECHARGE' ? '编辑充值记录' : '编辑消费记录'"
+          width="500px"
+        >
+          <el-form :model="editTransactionForm" label-width="120px">
+            <!-- 充值和消费都显示金额字段，但标签不同 -->
+            <el-form-item :label="editTransactionForm.type === 'RECHARGE' ? '充值金额' : '消费金额'">
+              <el-input v-model="editTransactionForm.amount" type="number" :placeholder="editTransactionForm.type === 'RECHARGE' ? '填写充值金额' : '填写折扣前的消费金额'" />
+            </el-form-item>
+
+            <!-- 只有消费类型才显示的字段 -->
+            <template v-if="editTransactionForm.type === 'CONSUMPTION'">
+              <el-form-item label="线路类型">
+                <el-select 
+                  v-model="editTransactionForm.consumptionType"
+                  placeholder="请选择线路类型"
+                  @change="handleEditConsumptionTypeChange"
+                >
+                  <el-option label="飞机/火车线" value="LONGLINE" />
+                  <el-option label="汽车线" value="SHORTLINE" />
+                </el-select>
+              </el-form-item>
+              <el-form-item label="抵扣金额">
+                <el-input v-model="editTransactionForm.deductionAmount" type="number" />
+              </el-form-item>
+              <el-form-item label="出行方向">
+                <el-input v-model="editTransactionForm.destination" type="textarea" />
+              </el-form-item>
+            </template>
+
+            <!-- 所有类型都显示备注字段 -->
+            <el-form-item label="备注">
+              <el-input v-model="editTransactionForm.remark" type="textarea" />
+            </el-form-item>
+          </el-form>
+          <template #footer>
+            <el-button @click="editTransactionDialogVisible = false">取消</el-button>
+            <el-button type="primary" @click="handleUpdateTransaction">确定</el-button>
+          </template>
+        </el-dialog>
       </div>
-    </el-dialog>
-
-    <!-- 修改手机号 -->
-    <el-dialog
-        v-model="changePhoneNumberDialogVisible"
-        title="修改手机号"
-        width="500px"
-    >
-      <el-form :model="memberForm" label-width="100px">
-        <el-form-item label="手机号" required>
-          <el-input v-model="memberForm.phoneNumber" type="text" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="changePhoneNumberDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleUpdatePhoneNumber">确定</el-button>
-      </template>
-    </el-dialog>
-
-    <!-- 修改身份证 -->
-    <el-dialog
-        v-model="changeIdNumberDialogVisible"
-        title="修改身份证"
-        width="500px"
-    >
-      <el-form :model="memberForm" label-width="100px">
-        <el-form-item label="身份证" required>
-          <el-input v-model="memberForm.idNumber" type="text" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="changeIdNumberDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleUpdateIDNumber">确定</el-button>
-      </template>
-    </el-dialog>
+    </div>
   </div>
 </template>
 
@@ -370,8 +446,9 @@ import {
   getTransactions,
   updateMemberStatus,
   updateMemberPhoneNumber,
-    updateMemberIdNumber
+  updateMemberIdNumber
 } from '@/api/member'
+import Header from '@/components/Header.vue'
 
 const members = ref([])
 const transactions = ref([])
@@ -381,6 +458,7 @@ const rechargeDialogVisible = ref(false)
 const consumeDialogVisible = ref(false)
 const changePhoneNumberDialogVisible = ref(false)
 const changeIdNumberDialogVisible = ref(false)
+const editTransactionDialogVisible = ref(false)
 const searchKeyword = ref('')
 const currentPage = ref(1)
 const pageSize = ref(10)
@@ -409,12 +487,47 @@ const transactionForm = ref({
   deductionAmount: ''
 })
 
+const editTransactionForm = ref({
+  id: null,
+  type: '',
+  amount: '',
+  consumptionType: '',
+  destination: '',
+  remark: '',
+  deductionAmount: ''
+})
+
 const loading = ref(false)
 
 // 将activeTimeFilter定义在setup内
 const activeTimeFilter = ref('all')
 
 const currentMember = ref(null)
+
+// 判断当前用户是否为管理员
+const isAdmin = computed(() => {
+  const token = localStorage.getItem('token')
+  if (!token) {
+    return false
+  }
+  
+  try {
+    // JWT令牌由三部分组成，用.分隔，第二部分是payload
+    const payload = token.split('.')[1]
+    // Base64解码
+    const decodedPayload = JSON.parse(atob(payload))
+    
+    // 检查用户角色
+    const hasRole = decodedPayload.roles && Array.isArray(decodedPayload.roles) && decodedPayload.roles.includes('ADMIN')
+    const hasAuthorities = decodedPayload.authorities && Array.isArray(decodedPayload.authorities) && 
+                        decodedPayload.authorities.some(auth => auth.authority === 'ROLE_ADMIN')
+    
+    return hasRole || hasAuthorities
+  } catch (error) {
+    console.error('解析JWT令牌失败', error)
+    return false
+  }
+})
 
 // 切换时间筛选函数
 const toggleTimeFilter = (filterType) => {
@@ -814,9 +927,106 @@ const clearTimeRange = () => {
 const filteredTransactions = computed(() => {
   return transactions.value
 })
+
+// 显示编辑账单对话框
+const showEditTransactionDialog = (transaction) => {
+  editTransactionForm.value = {
+    id: transaction.id,
+    type: transaction.type,
+    amount: transaction.amount,
+    consumptionType: transaction.consumptionType || 'LONGLINE',
+    destination: transaction.destination || '',
+    remark: transaction.remark || '',
+    deductionAmount: transaction.deductionAmount || transaction.amount
+  }
+  
+  editTransactionDialogVisible.value = true
+}
+
+// 处理编辑账单消费类型变化
+const handleEditConsumptionTypeChange = (type) => {
+  if (type === 'LONGLINE') {
+    editTransactionForm.value.deductionAmount = '200'
+  } else if (type === 'SHORTLINE') {
+    editTransactionForm.value.deductionAmount = '20'
+  }
+}
+
+// 更新账单信息
+const handleUpdateTransaction = async () => {
+  if (!editTransactionForm.value.amount){
+    ElMessage.error('请输入金额')
+    return
+  }
+
+  // 验证金额
+  const amount = parseFloat(editTransactionForm.value.amount)
+  if (isNaN(amount) || amount <= 0) {
+    ElMessage.error('金额必须大于0')
+    return
+  }
+
+  // 如果是消费类型，需要额外验证
+  if (editTransactionForm.value.type === 'CONSUMPTION') {
+    if (editTransactionForm.value.deductionAmount === undefined || editTransactionForm.value.deductionAmount === '') {
+      ElMessage.error('请输入抵扣金额')
+      return
+    }
+    if (!editTransactionForm.value.consumptionType) {
+      ElMessage.error('请选择线路类型')
+      return
+    }
+    if (!editTransactionForm.value.destination){
+      ElMessage.error('请输入出行方向')
+      return
+    }
+
+    // 验证抵扣金额
+    const deductionAmount = parseFloat(editTransactionForm.value.deductionAmount)
+    if (isNaN(deductionAmount) || deductionAmount < 0) {
+      ElMessage.error('抵扣金额不能为负数')
+      return
+    }
+    if (deductionAmount > amount) {
+      ElMessage.error('抵扣金额不能大于消费金额')
+      return
+    }
+  }
+
+  try {
+    // 直接使用axios发送请求
+    const response = await axios.put(`/api/transactions/${editTransactionForm.value.id}`, editTransactionForm.value, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    })
+    
+    ElMessage.success(editTransactionForm.value.type === 'RECHARGE' ? '充值记录更新成功' : '消费记录更新成功')
+    editTransactionDialogVisible.value = false
+    // 重新加载交易记录
+    await loadTransactions()
+  } catch (error) {
+    // 显示详细错误信息
+    if (error.response) {
+      ElMessage.error(`更新失败: ${error.response.status} - ${error.response.data?.message || JSON.stringify(error.response.data)}`)
+    } else {
+      ElMessage.error('更新失败：' + (error.message || '未知错误'))
+    }
+  }
+}
 </script>
 
 <style scoped>
+.member-list-container {
+  min-height: 100vh;
+  background-color: #f5f7fa;
+}
+
+.content {
+  padding: 20px;
+}
+
 .member-container {
   padding: 20px;
 }

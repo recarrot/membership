@@ -13,20 +13,12 @@ export default defineConfig({
     proxy: {
       '/api': {
         target: 'http://localhost:8080',  // 后端服务地址
+        changeOrigin: true
+      },
+      '/members': {
+        target: 'http://localhost:8080',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),  // 替换路径中的 `/api`
-        configure: (proxy, options) => {
-          // 用于调试代理
-          proxy.on('error', (err, req, res) => {
-            console.log('proxy error', err);
-          });
-          proxy.on('proxyReq', (proxyReq, req, res) => {
-            console.log('Sending Request to the Target:', req.method, req.url);
-          });
-          proxy.on('proxyRes', (proxyRes, req, res) => {
-            console.log('Received Response from the Target:', proxyRes.statusCode);
-          });
-        }
+        rewrite: (path) => '/'  // 重写路径，将/members请求重定向到前端根路径
       }
     }
   },

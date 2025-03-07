@@ -29,6 +29,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { login } from '@/api/user'
 import { ElMessage } from 'element-plus'
+import { setToken } from '@/utils/auth'
 
 const router = useRouter()
 const loginForm = ref({
@@ -37,15 +38,21 @@ const loginForm = ref({
 })
 
 const handleLogin = async () => {
-  console.log('Sending login request with data:', loginForm.value);
   try {
-    const { token } = await login(loginForm.value);
-    localStorage.setItem('token', token);
+    const response = await login(loginForm.value);
+    
+    if (!response.token) {
+      throw new Error('服务器返回的数据中没有token');
+    }
+    
+    // 保存token和用户信息
+    setToken(response.token);
+    localStorage.setItem('username', response.username);
+    
     ElMessage.success('登录成功');
     router.push('/members');
   } catch (error) {
-    console.error('Login failed:', error.response?.data || error);
-    ElMessage.error('登录失败：' + (error.response?.data?.message || '未知错误'));
+    ElMessage.error('登录失败：' + (error.response?.data?.message || error.message || '未知错误'));
   }
 }
 </script>

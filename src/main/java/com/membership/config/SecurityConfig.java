@@ -4,6 +4,7 @@ import com.membership.security.JwtAuthenticationFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -14,6 +15,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
+@EnableGlobalMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
     @Autowired
@@ -24,7 +26,7 @@ public class SecurityConfig {
         return http
                 .authorizeRequests()
                 // 静态资源和登录页面允许访问
-                .antMatchers("/", "/login", "/index.html", "/static/**", "/js/**", "/css/**", "/img/**").permitAll()
+                .antMatchers("/", "/login", "/index.html", "/static/**", "/js/**", "/css/**", "/img/**", "/members").permitAll()
                 // API认证端点允许匿名访问
                 .antMatchers("/api/auth/login", "/api/auth/register").permitAll()
                 // 错误页面允许访问
@@ -32,7 +34,7 @@ public class SecurityConfig {
                 // Swagger文档允许访问（如果需要）
                 .antMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 // 其他API需要认证
-                .antMatchers("/api/**", "/members").authenticated()
+                .antMatchers("/api/**").authenticated()
                 .anyRequest().authenticated()
                 .and()
                 .csrf().disable()
